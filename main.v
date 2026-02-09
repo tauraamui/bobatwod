@@ -58,7 +58,9 @@ fn (m GameModel) view(mut ctx tea.Context) {
 	ctx.draw_rect(0, 0, m.window_width, m.window_height)
 	ctx.reset_bg_color()
 
-	point(mut ctx, screen(ctx.window_width(), ctx.window_height(), project(Point{x: .0, y: .0, z: m.z_height})))
+	ctx.set_bg_color(tea.Color.ansi(255))
+	point(mut ctx, screen(ctx.window_width(), ctx.window_height(), project(Point{x: .0, y: .0, z: 1})))
+	ctx.reset_bg_color()
 }
 
 fn (m GameModel) clone() tea.Model {
