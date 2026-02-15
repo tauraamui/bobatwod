@@ -61,16 +61,24 @@ fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
 }
 
 const vs := [
-	Point{x: .5, y: .5, z: .5}
-	Point{x: -.5, y: .5, z: .5}
-	Point{x: .5, y: -.5, z: .5}
-	Point{x: -.5, y: -.5, z: .5}
+	Point{x: .25, y: .25, z: .25}
+	Point{x: -.25, y: .25, z: .25}
+	Point{x: -.25, y: -.25, z: .25}
+	Point{x: .25, y: -.25, z: .25}
 
-	Point{x: .5, y: .5, z: -.5}
-	Point{x: -.5, y: .5, z: -.5}
-	Point{x: .5, y: -.5, z: -.5}
-	Point{x: -.5, y: -.5, z: -.5}
+	Point{x: .25, y: .25, z: -.25}
+	Point{x: -.25, y: .25, z: -.25}
+	Point{x: -.25, y: -.25, z: -.25}
+	Point{x: .25, y: -.25, z: -.25}
+]
 
+const fs := [
+	[0, 1, 2, 3]
+	[4, 5, 6, 7]
+	[0, 4]
+	[1, 5]
+	[2, 6]
+	[3, 7]
 ]
 
 fn translate_z(p Point, delta_z f64) Point {
@@ -93,7 +101,7 @@ fn rotate_xz(p Point, angle f64) Point {
 
 fn (mut m GameModel) view(mut ctx tea.Context) {
 	// m.delta_z += (m.frame_label / 1000.0)
-	m.angle += 2 * math.pi * (m.frame_label / 1000.0)
+	m.angle += math.pi * (m.frame_label / 1000.0)
 
 	ctx.set_bg_color(tea.Color{ 30, 30, 30 })
 	ctx.draw_rect(0, 0, m.window_width, m.window_height)
@@ -101,8 +109,19 @@ fn (mut m GameModel) view(mut ctx tea.Context) {
 
 	ctx.set_bg_color(tea.Color{ g: 200 })
 
+	/*
 	for v in vs {
 		point(mut ctx, screen(m.window_width, m.window_height, project(translate_z(rotate_xz(v, m.angle), m.delta_z))))
+	}
+	*/
+
+	for f in fs {
+		for i in 0..f.len {
+			a := vs[f[i]]
+			b := vs[f[(i + 1) % f.len]]
+			line(mut ctx, screen(m.window_width, m.window_height, project(translate_z(rotate_xz(a, m.angle), m.delta_z))),
+			screen(m.window_width, m.window_height, project(translate_z(rotate_xz(b, m.angle), m.delta_z))))
+		}
 	}
 
 	ctx.reset_bg_color()
@@ -133,6 +152,10 @@ struct Point{
 fn point(mut ctx tea.Context, p Point) {
 	s := 1.0
 	ctx.draw_rect(int(p.x - s / 2), int(p.y - s / 2), int(s), int(s))
+}
+
+fn line(mut ctx tea.Context, p1 Point, p2 Point) {
+	ctx.draw_line(int(p1.x), int(p1.y), int(p2.x), int(p2.y), false)
 }
 
 fn screen(width int, height int, p Point) Point {
