@@ -20,16 +20,7 @@ struct FrameTickMsg {
 }
 
 fn (mut m GameModel) init() ?tea.Cmd {
-	mut cmds := []tea.Cmd{}
-	cmds << tea.emit_resize
-	cmds << frame_tick_cmd()
-	return tea.batch_array(cmds)
-}
-
-pub fn frame_tick_cmd() tea.Cmd {
-	return tea.tick(8 * time.millisecond, fn (t time.Time) tea.Msg {
-		return FrameTickMsg{ time: t }
-	})
+	return tea.emit_resize
 }
 
 fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
@@ -62,35 +53,50 @@ fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
 			m.window_width = msg.window_width
 			m.window_height = msg.window_height
 		}
-		FrameTickMsg {
-			m.delta_z += 1
-			return m.clone(), frame_tick_cmd()
-		}
 		else {}
 	}
 	return m.clone(), none
 }
 
-fn (mut m GameModel) view(mut ctx tea.Context) {
-	defer {
-		m.frame_count += 1
+const vs := [
+	Point{x: .5, y: .5, z: 1}
+	Point{x: -.5, y: .5, z: 1}
+	Point{x: .5, y: -.5, z: 1}
+	Point{x: -.5, y: -.5, z: 1}
+]
+
+fn translate_z(p Point, delta_z f64) Point {
+	return Point{
+		x: p.x
+		y: p.y
+		z: p.z + delta_z
 	}
+}
+
+fn (mut m GameModel) view(mut ctx tea.Context) {
+	m.delta_z += (m.frame_label / 1000.0)
+
 	ctx.set_bg_color(tea.Color{ 30, 30, 30 })
 	ctx.draw_rect(0, 0, m.window_width, m.window_height)
 	ctx.reset_bg_color()
 
-	ctx.set_bg_color(tea.Color.ansi(255))
-	point(mut ctx, screen(m.window_width, m.window_height, project(Point{x: 0, y: .0, z: 1})))
+	ctx.set_bg_color(tea.Color{ g: 200 })
+
+	for v in vs {
+		point(mut ctx, screen(m.window_width, m.window_height, project(translate_z(v, m.delta_z))))
+	}
+
 	ctx.reset_bg_color()
 
 	ctx.set_color(tea.Color.ansi(255))
-	ctx.draw_text(1, 1, "frames: ${m.frame_label}, DELTA Z: ${m.delta_z}")
+	ctx.draw_text(1, 1, "frames: ${m.frame_label}, DELTA Z: ${1 + m.delta_z}")
 
 	if time.now() - m.last_fps_update >= (1 * time.second) {
 		m.frame_label = 1000.0 / f64(m.frame_count)
 		m.frame_count = 0
 		m.last_fps_update = time.now()
 	}
+	m.frame_count += 1
 }
 
 fn (m GameModel) clone() tea.Model {
