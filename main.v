@@ -1,5 +1,6 @@
 module main
 
+import time
 import tauraamui.bobatea as tea
 
 struct GameModel {
@@ -8,11 +9,27 @@ mut:
 	window_width int
 	window_height int
 	position Point
-	z_height f64
+	delta_z  f64
+	frame_label f64
+	frame_count int
+	last_fps_update time.Time = time.now()
+}
+
+struct FrameTickMsg {
+	time time.Time
 }
 
 fn (mut m GameModel) init() ?tea.Cmd {
-	return tea.emit_resize
+	mut cmds := []tea.Cmd{}
+	cmds << tea.emit_resize
+	cmds << frame_tick_cmd()
+	return tea.batch_array(cmds)
+}
+
+pub fn frame_tick_cmd() tea.Cmd {
+	return tea.tick(8 * time.millisecond, fn (t time.Time) tea.Msg {
+		return FrameTickMsg{ time: t }
+	})
 }
 
 fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
@@ -26,9 +43,6 @@ fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
 					match msg.string() {
 						'escape' {
 							return m.clone(), tea.quit
-						}
-						'enter' {
-							m.z_height += .001
 						}
 						else {}
 					}
@@ -48,19 +62,35 @@ fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
 			m.window_width = msg.window_width
 			m.window_height = msg.window_height
 		}
+		FrameTickMsg {
+			m.delta_z += 1
+			return m.clone(), frame_tick_cmd()
+		}
 		else {}
 	}
 	return m.clone(), none
 }
 
-fn (m GameModel) view(mut ctx tea.Context) {
+fn (mut m GameModel) view(mut ctx tea.Context) {
+	defer {
+		m.frame_count += 1
+	}
 	ctx.set_bg_color(tea.Color{ 30, 30, 30 })
 	ctx.draw_rect(0, 0, m.window_width, m.window_height)
 	ctx.reset_bg_color()
 
 	ctx.set_bg_color(tea.Color.ansi(255))
-	point(mut ctx, screen(ctx.window_width(), ctx.window_height(), project(Point{x: 0, y: .0, z: 1})))
+	point(mut ctx, screen(m.window_width, m.window_height, project(Point{x: 0, y: .0, z: 1})))
 	ctx.reset_bg_color()
+
+	ctx.set_color(tea.Color.ansi(255))
+	ctx.draw_text(1, 1, "frames: ${m.frame_label}, DELTA Z: ${m.delta_z}")
+
+	if time.now() - m.last_fps_update >= (1 * time.second) {
+		m.frame_label = 1000.0 / f64(m.frame_count)
+		m.frame_count = 0
+		m.last_fps_update = time.now()
+	}
 }
 
 fn (m GameModel) clone() tea.Model {
