@@ -59,7 +59,7 @@ fn (m GameModel) view(mut ctx tea.Context) {
 	ctx.reset_bg_color()
 
 	ctx.set_bg_color(tea.Color.ansi(255))
-	point(mut ctx, screen(ctx.window_width(), ctx.window_height(), project(Point{x: .0, y: .0, z: 1})))
+	point(mut ctx, screen(ctx.window_width(), ctx.window_height(), project(Point{x: 0, y: .0, z: 1})))
 	ctx.reset_bg_color()
 }
 
@@ -76,7 +76,8 @@ struct Point{
 }
 
 fn point(mut ctx tea.Context, p Point) {
-	ctx.draw_rect(int(p.x), int(p.y), 1, 1)
+	s := 1.0
+	ctx.draw_rect(int(p.x - s / 2), int(p.y - s / 2), int(s), int(s))
 }
 
 fn screen(width int, height int, p Point) Point {
