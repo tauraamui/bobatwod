@@ -1,6 +1,7 @@
 module main
 
 import time
+import math
 import tauraamui.bobatea as tea
 
 struct GameModel {
@@ -9,10 +10,11 @@ mut:
 	window_width int
 	window_height int
 	position Point
-	delta_z  f64
+	delta_z  f64 = 1
 	frame_label f64
 	frame_count int
 	last_fps_update time.Time = time.now()
+	angle f64
 }
 
 struct FrameTickMsg {
@@ -59,10 +61,16 @@ fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
 }
 
 const vs := [
-	Point{x: .5, y: .5, z: 1}
-	Point{x: -.5, y: .5, z: 1}
-	Point{x: .5, y: -.5, z: 1}
-	Point{x: -.5, y: -.5, z: 1}
+	Point{x: .5, y: .5, z: .5}
+	Point{x: -.5, y: .5, z: .5}
+	Point{x: .5, y: -.5, z: .5}
+	Point{x: -.5, y: -.5, z: .5}
+
+	Point{x: .5, y: .5, z: -.5}
+	Point{x: -.5, y: .5, z: -.5}
+	Point{x: .5, y: -.5, z: -.5}
+	Point{x: -.5, y: -.5, z: -.5}
+
 ]
 
 fn translate_z(p Point, delta_z f64) Point {
@@ -73,8 +81,19 @@ fn translate_z(p Point, delta_z f64) Point {
 	}
 }
 
+fn rotate_xz(p Point, angle f64) Point {
+	c := math.cos(angle)
+	s := math.sin(angle)
+	return Point{
+		x: (p.x * c) - (p.z * s)
+		y: p.y
+		z: (p.z * s) + (p.z * c)
+	}
+}
+
 fn (mut m GameModel) view(mut ctx tea.Context) {
-	m.delta_z += (m.frame_label / 1000.0)
+	// m.delta_z += (m.frame_label / 1000.0)
+	m.angle += 2 * math.pi * (m.frame_label / 1000.0)
 
 	ctx.set_bg_color(tea.Color{ 30, 30, 30 })
 	ctx.draw_rect(0, 0, m.window_width, m.window_height)
@@ -83,7 +102,7 @@ fn (mut m GameModel) view(mut ctx tea.Context) {
 	ctx.set_bg_color(tea.Color{ g: 200 })
 
 	for v in vs {
-		point(mut ctx, screen(m.window_width, m.window_height, project(translate_z(v, m.delta_z))))
+		point(mut ctx, screen(m.window_width, m.window_height, project(translate_z(rotate_xz(v, m.angle), m.delta_z))))
 	}
 
 	ctx.reset_bg_color()
