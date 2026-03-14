@@ -85,12 +85,27 @@ fn load_obj(path string) ! {
 // BubbleTea Methods
 // =========================
 
+struct TickMsg {
+    time time.Time
+}
+
+pub fn tick_cmd() tea.Cmd {
+	return tea.tick(1 * time.millisecond, fn (t time.Time) tea.Msg {
+		return TickMsg{
+			time: t
+		}
+	})
+}
+
 fn (mut m GameModel) init() ?tea.Cmd {
-	return tea.emit_resize
+    return tea.sequence(tea.emit_resize, tick_cmd())
 }
 
 fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
 	match msg {
+        TickMsg {
+            return m.clone(), tick_cmd()
+        }
 		tea.KeyMsg {
 			match msg.k_type {
 				.special {
