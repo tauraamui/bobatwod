@@ -97,13 +97,14 @@ pub fn tick_cmd() tea.Cmd {
 	})
 }
 
-fn (mut m GameModel) init() ?tea.Cmd {
+fn (mut m GameModel) init() fn () tea.Msg {
     return tea.sequence(tea.emit_resize, tick_cmd())
 }
 
-fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
+fn (mut m GameModel) update(msg tea.Msg) (tea.Model, fn () tea.Msg) {
 	match msg {
         TickMsg {
+			m.angle += math.pi * (m.frame_label / 1000.0)
             return m.clone(), tick_cmd()
         }
 		tea.KeyMsg {
@@ -111,6 +112,12 @@ fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
 				.special {
 					if msg.string() == 'escape' {
 						return m.clone(), tea.quit
+					}
+					if msg.string() == 'up' {
+						m.delta_z -= 0.1
+					}
+					if msg.string() == 'down' {
+						m.delta_z += 0.1
 					}
 				}
 				.runes {
@@ -126,7 +133,7 @@ fn (mut m GameModel) update(msg tea.Msg) (tea.Model, ?tea.Cmd) {
 		}
 		else {}
 	}
-	return m.clone(), none
+	return m.clone(), tea.noop_cmd
 }
 
 // =========================
@@ -174,7 +181,7 @@ fn line(mut ctx tea.Context, p1 Point, p2 Point) {
 }
 
 fn (mut m GameModel) view(mut ctx tea.Context) {
-	m.angle += math.pi * (m.frame_label / 1000.0)
+	// m.angle += math.pi * (m.frame_label / 1000.0)
 
 	ctx.set_bg_color(tea.Color{30, 30, 30})
 	ctx.draw_rect(0, 0, m.window_width, m.window_height)
